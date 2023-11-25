@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from fractions import Fraction
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from itertools import product
@@ -144,7 +144,7 @@ def grafica_barras_data_sumada():
 
     # Obtener nombres de columnas y valores de data_sumada
     columnas = data_sumada.columns
-    valores = data_sumada.loc[[indice_deseado]].values  # Utilizar el índice deseado
+    valores = data_sumada.values
 
     # Obtener el número de barras
     num_barras = len(columnas)
@@ -153,12 +153,12 @@ def grafica_barras_data_sumada():
     posicion_barras = np.arange(num_barras)
 
     # Crear un gráfico de barras verticales intercambiando x e y
-    ax.bar(posicion_barras, valores.flatten(), align='center', label=indice_deseado)  # Utilizar flatten para convertir a una dimensión
+    ax.bar(posicion_barras, valores[0], align='center', label=columnas[0])
 
     # Configurar etiquetas y título
     plt.ylabel('Valor en Data Sumada')
     plt.xlabel('Columna')
-    plt.title(f'Gráfico de Barras para Data Sumada - Índice: {indice_deseado}')
+    plt.title('Gráfico de Barras para Data Sumada')
 
     # Mostrar las etiquetas en el eje x
     ax.set_xticks(posicion_barras)
@@ -169,8 +169,6 @@ def grafica_barras_data_sumada():
 
     # Mostrar el gráfico
     plt.show()
-
-
 
 
 def eliminar_caracter_columnas(dataframe, indice_a_eliminar):
@@ -198,10 +196,6 @@ def obtener_numero_ingresado():
     indice_a_eliminar = int(numero_ingresado.get())
     data_marginizada = eliminar_caracter_columnas(df5, indice_a_eliminar)
     data_sumada = sumar_columnas_repetidas(data_marginizada)
-    print("la data sumada es ", data_sumada)  # Agrega esta línea para verificar si data_sumada se actualiza correctamente
-
-
-
 
     
 
@@ -236,7 +230,6 @@ for i in range(len(combinaciones_posibles)):
       data2.extend(datos_tabla)
 
 
-data2 = [Fraction(numero).limit_denominator() for numero in data2]
 data2 = [data2[i:i+ len(canales)] for i in range(0, len(data2), len(canales))]
 
 
@@ -278,7 +271,6 @@ for i in range(len(combinaciones_posibles)):
 
       data3.extend(datos_tabla2)
 
-data3 = [Fraction(numero).limit_denominator() for numero in data3]
 data3 = [data3[i:i+ len(combinaciones_posibles)] for i in range(0, len(data3), len(combinaciones_posibles))]
 
 # Crear nombres para las columnas y filas
@@ -316,7 +308,6 @@ for i in range(len(combinaciones_posibles)):
       data4.extend(datos_tabla)
 
 
-data4 = [Fraction(numero).limit_denominator() for numero in data4]
 data4 = [data4[i:i+ len(canales)] for i in range(0, len(data4), len(canales))]
 
 
@@ -356,7 +347,6 @@ for i in range(len(combinaciones_posibles)):
 
       data5.extend(datos_tabla2)
 
-data5 = [Fraction(numero).limit_denominator() for numero in data5]
 data5 = [data5[i:i+ len(combinaciones_posibles)] for i in range(0, len(data5), len(combinaciones_posibles))]
 
 
@@ -373,8 +363,59 @@ print(df5)
 
       
     
-#Marginalizar--------------------------------------------------------------- 
+#Marginalizar punto3--------------------------------------------------------------- 
+def mostrar_ventana_punto3():
+    ventana_punto3 = tk.Toplevel(ventana)
+    ventana_punto3.title("Punto 3")
 
+    # Variables para almacenar la información
+    vfuturo = []
+    vpresente = [None, None, None]
+
+    # Función para guardar la información
+    def guardar_informacion():
+        nonlocal vfuturo
+        vfuturo = [check_a.get(), check_b.get(), check_c.get()]
+
+        nonlocal vpresente
+        vpresente = [entrada_a.get(), entrada_b.get(), entrada_c.get()]
+
+        ventana_punto3.destroy()
+        
+        
+
+    # Checkbox para el punto 3
+    check_a = tk.BooleanVar()
+    check_b = tk.BooleanVar()
+    check_c = tk.BooleanVar()
+
+    tk.Checkbutton(ventana_punto3, text="A", variable=check_a).grid(row=0, column=0)
+    tk.Checkbutton(ventana_punto3, text="B", variable=check_b).grid(row=1, column=0)
+    tk.Checkbutton(ventana_punto3, text="C", variable=check_c).grid(row=2, column=0)
+
+    # Labels e inputs para el presente
+    tk.Label(ventana_punto3, text="A").grid(row=0, column=1)
+    tk.Label(ventana_punto3, text="B").grid(row=1, column=1)
+    tk.Label(ventana_punto3, text="C").grid(row=2, column=1)
+
+    entrada_a = tk.Entry(ventana_punto3)
+    entrada_b = tk.Entry(ventana_punto3)
+    entrada_c = tk.Entry(ventana_punto3)
+
+    entrada_a.grid(row=0, column=2)
+    entrada_b.grid(row=1, column=2)
+    entrada_c.grid(row=2, column=2)
+
+    # Botón para guardar la información
+    boton_guardar = tk.Button(ventana_punto3, text="Guardar", command=guardar_informacion)
+    boton_guardar.grid(row=3, column=0, columnspan=3, pady=10)
+
+    # Centrar la ventana en la pantalla principal
+    ventana_punto3.geometry("+{}+{}".format(
+        int((ventana.winfo_screenwidth() - ventana_punto3.winfo_reqwidth()) / 2),
+        int((ventana.winfo_screenheight() - ventana_punto3.winfo_reqheight()) / 2)
+    ))
+    
 
 
 
@@ -415,6 +456,10 @@ boton_mostrar_tabla_marginizada.pack()
 # Botón para mostrar la gráfica de barras de data_sumada
 boton_grafica_barras_data_sumada = tk.Button(ventana, text="Gráfico de Barras para Data Sumada", command=grafica_barras_data_sumada)
 boton_grafica_barras_data_sumada.pack()
+
+# Botón para mostrar la ventana del punto 3
+boton_punto3 = tk.Button(ventana, text="Punto 3", command=mostrar_ventana_punto3)
+boton_punto3.pack()
 
 """ boton_archivo = tk.Button(ventana, text="Cargar Archivo", command=hacer_clic)
 boton_archivo.pack() """
