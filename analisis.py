@@ -1,9 +1,8 @@
 #imports----------------------------------------------------------------
 import pandas as pd
 import numpy as np
-from fractions import Fraction
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from itertools import product
@@ -30,6 +29,56 @@ data2=[]
 
 
 #funciones---------------------------------------------------------------------
+
+def barras_resultado():
+    ventana_resultados = tk.Toplevel(ventana)
+    ventana_resultados.title("Gráfico de Barras para Resultado")
+
+    # Crear y mostrar la gráfica de barras en la nueva ventana
+    grafica_barras_resultado = plt.Figure(figsize=(5, 4), dpi=100)
+    ax = grafica_barras_resultado.add_subplot(111)
+
+    # Obtener nombres de columnas y valores de resultado
+    columnas_resultado = resultado.columns
+    valores_resultado = resultado.iloc[0].values  # Tomar la primera fila de resultado
+
+    # Crear un gráfico de barras
+    ax.bar(columnas_resultado, valores_resultado)
+
+    # Configurar etiquetas y título
+    ax.set_xlabel('Columna')
+    ax.set_ylabel('Valor en Resultado')
+    ax.set_title('Gráfico de Barras para Resultado')
+
+    # Mostrar la gráfica en la nueva ventana
+    canvas = FigureCanvasTkAgg(grafica_barras_resultado, master=ventana_resultados)
+    canvas.draw()
+    canvas.get_tk_widget().pack()
+
+
+def mostrar_ventana_resultados():
+    if not resultado.empty:
+        # Crear una nueva ventana para mostrar la tabla de resultados
+        ventana_resultados = tk.Toplevel(ventana)
+        ventana_resultados.title("Tabla de Resultados")
+
+        # Crear un Treeview en la nueva ventana
+        tree = ttk.Treeview(ventana_resultados, columns=['columnas'] + list(resultado.columns), show="headings")
+
+        # Configurar las columnas
+        tree.heading('columnas', text='Columnas')  # Columna adicional para mostrar los nombres de las filas
+        for col in resultado.columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100)  # Ajusta el ancho de las columnas según tus necesidades
+
+        # Insertar los datos en el Treeview
+        for nombre_fila, row in resultado.iterrows():
+            tree.insert("", "end", values=[nombre_fila] + list(row))
+
+        # Colocar el Treeview en la nueva ventana
+        tree.pack()
+    else:
+        messagebox.showinfo("Advertencia", "La tabla de resultados está vacía.")
 
 def obtener_dato_ingresado():
     global indice_deseado, fila_resultante  # Necesario para modificar las variables globales
@@ -144,7 +193,7 @@ def grafica_barras_data_sumada():
 
     # Obtener nombres de columnas y valores de data_sumada
     columnas = data_sumada.columns
-    valores = data_sumada.values
+    valores = data_sumada.loc[[indice_deseado]].values  # Utilizar el índice deseado
 
     # Obtener el número de barras
     num_barras = len(columnas)
@@ -153,12 +202,12 @@ def grafica_barras_data_sumada():
     posicion_barras = np.arange(num_barras)
 
     # Crear un gráfico de barras verticales intercambiando x e y
-    ax.bar(posicion_barras, valores[0], align='center', label=columnas[0])
+    ax.bar(posicion_barras, valores.flatten(), align='center', label=indice_deseado)  # Utilizar flatten para convertir a una dimensión
 
     # Configurar etiquetas y título
     plt.ylabel('Valor en Data Sumada')
     plt.xlabel('Columna')
-    plt.title('Gráfico de Barras para Data Sumada')
+    plt.title(f'Gráfico de Barras para Data Sumada - Índice: {indice_deseado}')
 
     # Mostrar las etiquetas en el eje x
     ax.set_xticks(posicion_barras)
@@ -169,6 +218,8 @@ def grafica_barras_data_sumada():
 
     # Mostrar el gráfico
     plt.show()
+
+
 
 
 def eliminar_caracter_columnas(dataframe, indice_a_eliminar):
@@ -196,6 +247,34 @@ def obtener_numero_ingresado():
     indice_a_eliminar = int(numero_ingresado.get())
     data_marginizada = eliminar_caracter_columnas(df5, indice_a_eliminar)
     data_sumada = sumar_columnas_repetidas(data_marginizada)
+    print("la data sumada es ", data_sumada)  # Agrega esta línea para verificar si data_sumada se actualiza correctamente
+
+def eliminar_posicion_digito_fila(dataframe, posicion_a_eliminar):
+  # Crear una copia del DataFrame original
+  nuevo_dataframe = dataframe.copy()
+
+  # Obtener el nombre de las filas
+  nombres_filas = nuevo_dataframe.index.tolist()
+
+  # Eliminar el dígito en la posición especificada para cada nombre de fila
+  nuevos_nombres_filas = [nombre[:posicion_a_eliminar] + nombre[posicion_a_eliminar + 1:] for nombre in nombres_filas]
+
+  # Asignar los nuevos nombres al índice del DataFrame
+  nuevo_dataframe.index = nuevos_nombres_filas
+
+  return nuevo_dataframe
+  
+def sumar_filas_similares(dataframe):
+    # Obtener una copia del DataFrame original
+    nuevo_dataframe = dataframe.copy()
+
+    # Agrupar por el índice y sumar las filas con el mismo nombre
+    nuevo_dataframe = nuevo_dataframe.groupby(nuevo_dataframe.index).sum()
+
+    # Dividir cada valor en el DataFrame entre 2
+    nuevo_dataframe = nuevo_dataframe / 2
+
+    return nuevo_dataframe
 
     
 
@@ -363,7 +442,9 @@ print(df5)
 
       
     
-#Marginalizar punto3--------------------------------------------------------------- 
+#Marginalizar--------------------------------------------------------------- 
+
+
 def mostrar_ventana_punto3():
     ventana_punto3 = tk.Toplevel(ventana)
     ventana_punto3.title("Punto 3")
@@ -374,13 +455,68 @@ def mostrar_ventana_punto3():
 
     # Función para guardar la información
     def guardar_informacion():
+
         nonlocal vfuturo
         vfuturo = [check_a.get(), check_b.get(), check_c.get()]
 
         nonlocal vpresente
         vpresente = [entrada_a.get(), entrada_b.get(), entrada_c.get()]
+        global resultado
+        resultado= pd.DataFrame()
+        
+        for l in range(len(vfuturo)):
+          if vfuturo[l] == True:
+            for v in range(len(vfuturo)):
+              copia=df5
+              if vfuturo[v] == True:
+                if(v == 0):
+                  copia=eliminar_caracter_columnas(copia, 1)
+                  copia=sumar_columnas_repetidas(copia)
+                  copia=eliminar_caracter_columnas(copia, 2)
+                  copia=sumar_columnas_repetidas(copia)
+                if(v == 1):
+                  copia=eliminar_caracter_columnas(copia, 0)
+                  copia=sumar_columnas_repetidas(copia)
+                  copia=eliminar_caracter_columnas(copia, 2)
+                  copia=sumar_columnas_repetidas(copia)
+                if(v == 2):
+                  copia=eliminar_caracter_columnas(copia, 0)
+                  copia=sumar_columnas_repetidas(copia)
+                  copia=eliminar_caracter_columnas(copia, 1)
+                  copia=sumar_columnas_repetidas(copia)
+                  
+            for k in range(len(vpresente)):
+              if vpresente[k] == '':
+                if(k == 0):
+                    copia=eliminar_posicion_digito_fila(copia, 1)
+                    copia=sumar_filas_similares(copia)
+                    copia=eliminar_posicion_digito_fila(copia, 2)
+                    copia=sumar_filas_similares(copia)
+                if(k == 1):
+                  copia=eliminar_posicion_digito_fila(copia, 0)
+                  copia=sumar_filas_similares(copia)
+                  copia=eliminar_posicion_digito_fila(copia, 2)
+                  copia=sumar_filas_similares(copia)
+                if(k == 2):
+                  copia=eliminar_posicion_digito_fila(copia, 0)
+                  copia=sumar_filas_similares(copia)
+                  copia=eliminar_posicion_digito_fila(copia, 1)
+                  copia=sumar_filas_similares(copia) 
+            print("jee")
+            print(resultado)
+            if(resultado.empty):
+              resultado=copia
+            else:
+              resultado= resultado*copia
+                             
+        # Dentro de la función guardar_informacion después de calcular resultado
+        if not resultado.empty:
+          # Mostrar la ventana de resultados
+          mostrar_ventana_resultados()
+          barras_resultado()
 
         ventana_punto3.destroy()
+        
         
         
 
@@ -388,6 +524,7 @@ def mostrar_ventana_punto3():
     check_a = tk.BooleanVar()
     check_b = tk.BooleanVar()
     check_c = tk.BooleanVar()
+
 
     tk.Checkbutton(ventana_punto3, text="A", variable=check_a).grid(row=0, column=0)
     tk.Checkbutton(ventana_punto3, text="B", variable=check_b).grid(row=1, column=0)
@@ -416,7 +553,6 @@ def mostrar_ventana_punto3():
         int((ventana.winfo_screenheight() - ventana_punto3.winfo_reqheight()) / 2)
     ))
     
-
 
 
 
@@ -457,10 +593,6 @@ boton_mostrar_tabla_marginizada.pack()
 boton_grafica_barras_data_sumada = tk.Button(ventana, text="Gráfico de Barras para Data Sumada", command=grafica_barras_data_sumada)
 boton_grafica_barras_data_sumada.pack()
 
-# Botón para mostrar la ventana del punto 3
-boton_punto3 = tk.Button(ventana, text="Punto 3", command=mostrar_ventana_punto3)
-boton_punto3.pack()
-
 """ boton_archivo = tk.Button(ventana, text="Cargar Archivo", command=hacer_clic)
 boton_archivo.pack() """
 
@@ -469,13 +601,14 @@ boton_grafica_barras_fila_resultante = tk.Button(ventana, text="Gráfico de Barr
 boton_grafica_barras_fila_resultante.pack()
 
 
+# Botón para mostrar la ventana del punto 3
+boton_punto3 = tk.Button(ventana, text="Punto 3", command=mostrar_ventana_punto3)
+boton_punto3.pack()
+
+
 
 etiqueta = tk.Label(ventana, text="")
 etiqueta.pack()
 
 
 ventana.mainloop()
-
-
-
-
