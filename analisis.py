@@ -7,9 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from itertools import product
 
-
 #variables----------------------------------------------------------------
-
 
 canales=[ [0,1,1,0,1,1,0,0,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,0,0,1],
           [0,0,0,1,1,0,1,0,1,0,1,0,1,0,1,1,0,1,1,0,1,1,0,1,1,1,1,0,0,0],
@@ -20,14 +18,6 @@ canales=[ [0,1,1,0,1,1,0,0,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,0,0,1],
 combinaciones_posibles=[]
 combinaciones_canales=[]
 data2=[]
-
-
-
-
-#-----------------------------------------------------------------------------
-
-
-
 #funciones---------------------------------------------------------------------
 
 def barras_resultado():
@@ -165,9 +155,6 @@ def mostrar_tabla_marginizada(data):
     # Coloca el Treeview en la nueva ventana
     tree.pack()
 
-    
-    
-    
 def grafica_barras_fila_resultante(fila_resultante):
     # Crear una figura y ejes
     fig, ax = plt.subplots()
@@ -218,9 +205,6 @@ def grafica_barras_data_sumada():
 
     # Mostrar el gráfico
     plt.show()
-
-
-
 
 def eliminar_caracter_columnas(dataframe, indice_a_eliminar):
     # Iterar sobre todas las columnas del DataFrame
@@ -276,16 +260,11 @@ def sumar_filas_similares(dataframe):
 
     return nuevo_dataframe
 
-    
-
 #ejecucción----------------------------------------------------
 
 #obtenemos todas las combinaciones en la variable combinaciones posibles
 generar_combinaciones_binarias(len(canales))
 cargar_combinaciones_canales()
-
-
-
 
 #obtendremos coincidencias
 
@@ -308,9 +287,7 @@ for i in range(len(combinaciones_posibles)):
 
       data2.extend(datos_tabla)
 
-
 data2 = [data2[i:i+ len(canales)] for i in range(0, len(data2), len(canales))]
-
 
 # Crear nombres para las columnas y filas
 column_names = ['canal{}'.format(i + 1) for i in range(len(canales))]
@@ -321,9 +298,6 @@ df = pd.DataFrame(data2, columns=column_names, index=index_names)
 
 # Mostrar el DataFrame resultante
 print(df)
-
-    
-    
     
 #-ejercicio2-------------------------------
 
@@ -362,7 +336,6 @@ df2 = pd.DataFrame(data3, columns=column_names, index=index_names)
 # Mostrar el DataFrame resultante
 print(df2)
 
-
 #ejercicio 3 -------------------------------------------------------------------------------------
 
 data4=[]
@@ -386,9 +359,7 @@ for i in range(len(combinaciones_posibles)):
 
       data4.extend(datos_tabla)
 
-
 data4 = [data4[i:i+ len(canales)] for i in range(0, len(data4), len(canales))]
-
 
 # Crear nombres para las columnas y filas
 column_names = ['canal{}'.format(i + 1) for i in range(len(canales))]
@@ -399,7 +370,6 @@ index_names = combinaciones_posibles
 
 # Mostrar el DataFrame resultante
 print(df4) """
-
 
 #ejercicio4------------------------------------------------
 
@@ -428,8 +398,6 @@ for i in range(len(combinaciones_posibles)):
 
 data5 = [data5[i:i+ len(combinaciones_posibles)] for i in range(0, len(data5), len(combinaciones_posibles))]
 
-
-
 # Crear nombres para las columnas y filas
 column_names = combinaciones_posibles
 index_names = combinaciones_posibles
@@ -439,11 +407,8 @@ df5 = pd.DataFrame(data5, columns=column_names, index=index_names)
 
 # Mostrar el DataFrame resultante
 print(df5)
-
-      
     
 #Marginalizar--------------------------------------------------------------- 
-
 
 def mostrar_ventana_punto3():
     ventana_punto3 = tk.Toplevel(ventana)
@@ -517,9 +482,6 @@ def mostrar_ventana_punto3():
 
         ventana_punto3.destroy()
         
-        
-        
-
     # Checkbox para el punto 3
     check_a = tk.BooleanVar()
     check_b = tk.BooleanVar()
@@ -553,16 +515,12 @@ def mostrar_ventana_punto3():
         int((ventana.winfo_screenheight() - ventana_punto3.winfo_reqheight()) / 2)
     ))
     
-
-
-
 #ventana-----------------------------------------------------------------------------
 ventana = tk.Tk()
 ventana.title("Proyecto Analisis")
 
 dato_ingresado = tk.StringVar()
 numero_ingresado = tk.DoubleVar()
-
 
 # Crear el campo de entrada
 campo_entrada = tk.Entry(ventana, textvariable=dato_ingresado)
@@ -600,15 +558,11 @@ boton_archivo.pack() """
 boton_grafica_barras_fila_resultante = tk.Button(ventana, text="Gráfico de Barras para la Fila ", command=lambda: grafica_barras_fila_resultante(fila_resultante))
 boton_grafica_barras_fila_resultante.pack()
 
-
 # Botón para mostrar la ventana del punto 3
 boton_punto3 = tk.Button(ventana, text="Punto 3", command=mostrar_ventana_punto3)
 boton_punto3.pack()
 
-
-
 etiqueta = tk.Label(ventana, text="")
 etiqueta.pack()
-
 
 ventana.mainloop()
