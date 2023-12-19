@@ -8,9 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from itertools import product
 
-
 #variables----------------------------------------------------------------
-
 
 canales=[ [0,1,1,0,1,1,0,0,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,0,0,1],
           [0,0,0,1,1,0,1,0,1,0,1,0,1,0,1,1,0,1,1,0,1,1,0,1,1,1,1,0,0,0],
@@ -21,14 +19,6 @@ canales=[ [0,1,1,0,1,1,0,0,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,0,0,1],
 combinaciones_posibles=[]
 combinaciones_canales=[]
 data2=[]
-
-
-
-
-#-----------------------------------------------------------------------------
-
-
-
 #funciones---------------------------------------------------------------------
 
 def obtener_dato_ingresado():
@@ -42,16 +32,11 @@ def generar_combinaciones_binarias(n):
         combinaciones_posibles.append("".join(combinacion))
 
 def cargar_combinaciones_canales():
-  #iterar las veces de items que tenga el primer canal ya que todos tienen la misma cantidad de items
-  for i in range(len(canales[0])):
-      combinacion=[]
-      #necesitamos sacar la combinacion según la cantidad de canales, se agrega cada elemento de la posición, se pasan a string y se agrega a combinaciones canales
-      for j in range(len(canales)):
-        combinacion.append(canales[j][i])
-      combinacion = [str(elemento) for elemento in combinacion]
-      resultado = ''.join(combinacion)
-      combinaciones_canales.append(resultado)
-
+  # Utiliza zip para agrupar los elementos de cada canal en lugar de iterar sobre índices
+    for combinacion in zip(*canales):
+        # Convierte los elementos a cadena y únelos para obtener la combinación
+        resultado = ''.join(map(str, combinacion))
+        combinaciones_canales.append(resultado)
 
 def obtener_indices(x):
   indices=[]
@@ -62,7 +47,6 @@ def obtener_indices(x):
 
   return indices
 
-
 def obtener_fila_por_indice(dataframe, indice):
     try:
         fila_seleccionada = dataframe.loc[indice]
@@ -70,7 +54,6 @@ def obtener_fila_por_indice(dataframe, indice):
     except KeyError:
         print(f"No se encontró el índice {indice}.")
         return None
-    
     
 # Función para mostrar la tabla
 def mostrar_tabla(data):
@@ -94,7 +77,6 @@ def mostrar_tabla(data):
     # Coloca el Treeview en la nueva ventana
     tree.pack()
 
-
 def mostrar_tabla_marginizada(data):
     # Crear una nueva ventana (toplevel) para la tabla
     ventana_tabla = tk.Toplevel(ventana)
@@ -116,9 +98,6 @@ def mostrar_tabla_marginizada(data):
     # Coloca el Treeview en la nueva ventana
     tree.pack()
 
-    
-    
-    
 def grafica_barras_fila_resultante(fila_resultante):
     # Crear una figura y ejes
     fig, ax = plt.subplots()
@@ -170,20 +149,10 @@ def grafica_barras_data_sumada():
     # Mostrar el gráfico
     plt.show()
 
-
-
-
 def eliminar_caracter_columnas(dataframe, indice_a_eliminar):
-    # Iterar sobre todas las columnas del DataFrame
-    for columna in dataframe.columns:
-        # Obtener el valor actual de la columna
-        valor_original = columna
-
-        # Eliminar el índice especificado
-        nuevo_valor = valor_original[:indice_a_eliminar] + valor_original[indice_a_eliminar + 1:]
-
-        # Renombrar la columna en el DataFrame
-        dataframe = dataframe.rename(columns={columna: nuevo_valor})
+    # Utilizar un diccionario de mapeo para renombrar las columnas
+    mapping = {col: col[:indice_a_eliminar] + col[indice_a_eliminar + 1:] for col in dataframe.columns}
+    dataframe = dataframe.rename(columns=mapping)
 
     return dataframe
   
@@ -200,19 +169,11 @@ def obtener_numero_ingresado():
     data_sumada = sumar_columnas_repetidas(data_marginizada)
     print("la data sumada es ", data_sumada)  # Agrega esta línea para verificar si data_sumada se actualiza correctamente
 
-
-
-
-    
-
 #ejecucción----------------------------------------------------
 
 #obtenemos todas las combinaciones en la variable combinaciones posibles
 generar_combinaciones_binarias(len(canales))
 cargar_combinaciones_canales()
-
-
-
 
 #obtendremos coincidencias
 
@@ -235,10 +196,8 @@ for i in range(len(combinaciones_posibles)):
 
       data2.extend(datos_tabla)
 
-
 data2 = [Fraction(numero).limit_denominator() for numero in data2]
 data2 = [data2[i:i+ len(canales)] for i in range(0, len(data2), len(canales))]
-
 
 # Crear nombres para las columnas y filas
 column_names = ['canal{}'.format(i + 1) for i in range(len(canales))]
@@ -250,15 +209,8 @@ df = pd.DataFrame(data2, columns=column_names, index=index_names)
 # Mostrar el DataFrame resultante
 print(df)
 
-    
-    
-    
 #-ejercicio2-------------------------------
-
-#solución punto 2
-
 data3=[]
-
 for i in range(len(combinaciones_posibles)):
   #obtenemos los índices siguientes a las coincidencias
   indices= obtener_indices(i)
@@ -284,16 +236,13 @@ data3 = [data3[i:i+ len(combinaciones_posibles)] for i in range(0, len(data3), l
 # Crear nombres para las columnas y filas
 column_names = combinaciones_posibles
 index_names = combinaciones_posibles
-
 # Convertir el array de NumPy en un DataFrame de Pandas con nombres
 df2 = pd.DataFrame(data3, columns=column_names, index=index_names)
-
 # Mostrar el DataFrame resultante
 print(df2)
 
 
 #ejercicio 3 -------------------------------------------------------------------------------------
-
 data4=[]
 
 for i in range(len(combinaciones_posibles)):
@@ -315,10 +264,8 @@ for i in range(len(combinaciones_posibles)):
 
       data4.extend(datos_tabla)
 
-
 data4 = [Fraction(numero).limit_denominator() for numero in data4]
 data4 = [data4[i:i+ len(canales)] for i in range(0, len(data4), len(canales))]
-
 
 # Crear nombres para las columnas y filas
 column_names = ['canal{}'.format(i + 1) for i in range(len(canales))]
@@ -330,13 +277,8 @@ index_names = combinaciones_posibles
 # Mostrar el DataFrame resultante
 print(df4) """
 
-
 #ejercicio4------------------------------------------------
-
-#solución punto 4
-
 data5=[]
-
 for i in range(len(combinaciones_posibles)):
   #obtenemos los índices siguientes a las coincidencias
   indices= obtener_indices(i)
@@ -359,8 +301,6 @@ for i in range(len(combinaciones_posibles)):
 data5 = [Fraction(numero).limit_denominator() for numero in data5]
 data5 = [data5[i:i+ len(combinaciones_posibles)] for i in range(0, len(data5), len(combinaciones_posibles))]
 
-
-
 # Crear nombres para las columnas y filas
 column_names = combinaciones_posibles
 index_names = combinaciones_posibles
@@ -371,21 +311,12 @@ df5 = pd.DataFrame(data5, columns=column_names, index=index_names)
 # Mostrar el DataFrame resultante
 print(df5)
 
-      
-    
-#Marginalizar--------------------------------------------------------------- 
-
-
-
-
-
 #ventana-----------------------------------------------------------------------------
 ventana = tk.Tk()
 ventana.title("Proyecto Analisis")
 
 dato_ingresado = tk.StringVar()
 numero_ingresado = tk.DoubleVar()
-
 
 # Crear el campo de entrada
 campo_entrada = tk.Entry(ventana, textvariable=dato_ingresado)
@@ -402,11 +333,9 @@ boton_obtener_dato.pack()
 boton_obtener_numero = tk.Button(ventana, text="Obtener numero", command=obtener_numero_ingresado)
 boton_obtener_numero.pack()
 
-
 # Botón para mostrar la tabla
 boton_mostrar_tabla = tk.Button(ventana, text="Mostrar Tabla", command=lambda:mostrar_tabla(df5))
 boton_mostrar_tabla.pack()
-
 
 # Botón para mostrar la tabla marginizada
 boton_mostrar_tabla_marginizada = tk.Button(ventana, text="Mostrar Tabla marginizada", command=lambda:mostrar_tabla_marginizada(data_sumada))
@@ -423,14 +352,7 @@ boton_archivo.pack() """
 boton_grafica_barras_fila_resultante = tk.Button(ventana, text="Gráfico de Barras para la Fila ", command=lambda: grafica_barras_fila_resultante(fila_resultante))
 boton_grafica_barras_fila_resultante.pack()
 
-
-
 etiqueta = tk.Label(ventana, text="")
 etiqueta.pack()
 
-
 ventana.mainloop()
-
-
-
-
