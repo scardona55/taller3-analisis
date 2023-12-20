@@ -469,10 +469,10 @@ def mostrar_ventana_punto3():
                   copia=sumar_filas_similares(copia) 
             print("jee")
             print(resultado)
-            if(resultado.empty):
-              resultado=copia
+            if resultado.size != 0:
+                resultado = pd.DataFrame(np.kron(resultado, copia))
             else:
-              resultado= resultado*copia
+                resultado = pd.DataFrame(copia)
                              
         # Dentro de la función guardar_informacion después de calcular resultado
         if not resultado.empty:
