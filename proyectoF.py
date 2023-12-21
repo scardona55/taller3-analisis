@@ -6,6 +6,7 @@ from tkinter import ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from itertools import product
+from scipy.stats import wasserstein_distance
 
 #variables----------------------------------------------------------------
 
@@ -20,60 +21,18 @@ combinaciones_canales=[]
 data2=[]
 #funciones---------------------------------------------------------------------
 
-def barras_resultado():
-    ventana_resultados = tk.Toplevel(ventana)
-    ventana_resultados.title("Gráfico de Barras para Resultado")
+def calculate_emd_marginal(df1, df2):
+    # Asumiendo que ambos DataFrames tienen el mismo tamaño y las mismas etiquetas de filas/columnas.
+    
+    # Obtener distribuciones marginales sumando sobre las columnas
+    marginal1 = df1.sum(axis=1)
+    marginal2 = df2.sum(axis=1)
+    
+    # Calcular la Earth Mover's Distance entre las dos distribuciones marginales
+    emd_value = wasserstein_distance(marginal1, marginal2)
+    
+    return emd_value
 
-    # Crear y mostrar la gráfica de barras en la nueva ventana
-    grafica_barras_resultado = plt.Figure(figsize=(5, 4), dpi=100)
-    ax = grafica_barras_resultado.add_subplot(111)
-
-    # Obtener nombres de columnas y valores de resultado
-    columnas_resultado = resultado.columns
-    valores_resultado = resultado.iloc[0].values  # Tomar la primera fila de resultado
-
-    # Crear un gráfico de barras
-    ax.bar(columnas_resultado, valores_resultado)
-
-    # Configurar etiquetas y título
-    ax.set_xlabel('Columna')
-    ax.set_ylabel('Valor en Resultado')
-    ax.set_title('Gráfico de Barras para Resultado')
-
-    # Mostrar la gráfica en la nueva ventana
-    canvas = FigureCanvasTkAgg(grafica_barras_resultado, master=ventana_resultados)
-    canvas.draw()
-    canvas.get_tk_widget().pack()
-
-
-def mostrar_ventana_resultados():
-    if not resultado.empty:
-        # Crear una nueva ventana para mostrar la tabla de resultados
-        ventana_resultados = tk.Toplevel(ventana)
-        ventana_resultados.title("Tabla de Resultados")
-
-        # Crear un Treeview en la nueva ventana
-        tree = ttk.Treeview(ventana_resultados, columns=['columnas'] + list(resultado.columns), show="headings")
-
-        # Configurar las columnas
-        tree.heading('columnas', text='Columnas')  # Columna adicional para mostrar los nombres de las filas
-        for col in resultado.columns:
-            tree.heading(col, text=col)
-            tree.column(col, width=100)  # Ajusta el ancho de las columnas según tus necesidades
-
-        # Insertar los datos en el Treeview
-        for nombre_fila, row in resultado.iterrows():
-            tree.insert("", "end", values=[nombre_fila] + list(row))
-
-        # Colocar el Treeview en la nueva ventana
-        tree.pack()
-    else:
-        messagebox.showinfo("Advertencia", "La tabla de resultados está vacía.")
-
-def obtener_dato_ingresado():
-    global indice_deseado, fila_resultante  # Necesario para modificar las variables globales
-    indice_deseado = str(dato_ingresado.get())
-    fila_resultante = obtener_fila_por_indice(df5, indice_deseado)
 
 #nos devuelve todas las combinaciones de binarios posibles
 def generar_combinaciones_binarias(n):
@@ -90,6 +49,45 @@ def cargar_combinaciones_canales():
       combinacion = [str(elemento) for elemento in combinacion]
       resultado = ''.join(combinacion)
       combinaciones_canales.append(resultado)
+
+def ptensorial(df1,df2):
+    # Verificar que los índices de ambos DataFrames coinciden y están en el mismo orden
+    assert (df1.index == df2.index).all(), "Indices of both DataFrames must match."
+    
+    # Inicializar un diccionario para recoger los datos del producto tensorial
+    tensor_data = {}
+
+    # Calcular el producto tensorial
+    for col1 in df1.columns:
+        for col2 in df2.columns:
+            # El nombre de la nueva columna será la combinación de los nombres de las filas originales
+            new_col_name = col1 + col2
+            # Realizar la multiplicación elemento a elemento
+            tensor_data[new_col_name] = df1[col1] * df2[col2]
+
+    # Crear el nuevo DataFrame usando el diccionario
+    tensor_df = pd.DataFrame(tensor_data, index=df1.index)
+
+    return tensor_df
+
+def tensor_product(df1, df2):
+    # Asegurarse de que ambos DataFrames tienen el mismo índice
+    assert df1.index.equals(df2.index), "Los índices de ambos DataFrames deben coincidir."
+    
+    # Crear el nuevo DataFrame con las combinaciones de nombres de columna
+    tensor_product_columns = [f'{c1}_{c2}' for c1 in df1.columns for c2 in df2.columns]
+    tensor_df = pd.DataFrame(index=df1.index, columns=tensor_product_columns)
+    
+    # Llenar el nuevo DataFrame con los productos tensoriales
+    for index in df1.index:
+        for c1 in df1.columns:
+            for c2 in df2.columns:
+                tensor_df.at[index, f'{c1}_{c2}'] = df1.at[index, c1] * df2.at[index, c2]
+    
+    # Renombrar las columnas para que coincidan con los nombres de las filas
+    tensor_df.columns = tensor_df.index
+    
+    return tensor_df
 
 
 def obtener_indices(x):
@@ -133,79 +131,6 @@ def mostrar_tabla(data):
     # Coloca el Treeview en la nueva ventana
     tree.pack()
 
-
-def mostrar_tabla_marginizada(data):
-    # Crear una nueva ventana (toplevel) para la tabla
-    ventana_tabla = tk.Toplevel(ventana)
-    ventana_tabla.title("Tabla")
-
-    # Crear un Treeview en la nueva ventana
-    tree = ttk.Treeview(ventana_tabla, columns=['estados'] + list(data.columns), show="headings")
-
-    # Configurar las columnas
-    tree.heading('estados', text='estados')  # Columna adicional para mostrar los nombres de las filas
-    for col in data.columns:
-        tree.heading(col, text=col)
-        tree.column(col, width=100)  # Ajusta el ancho de las columnas según tus necesidades
-
-    # Insertar los datos en el Treeview
-    for nombre_fila, row in data.iterrows():
-        tree.insert("", "end", values=[nombre_fila] + list(row))
-
-    # Coloca el Treeview en la nueva ventana
-    tree.pack()
-
-def grafica_barras_fila_resultante(fila_resultante):
-    # Crear una figura y ejes
-    fig, ax = plt.subplots()
-
-    # Obtener nombres de columnas y valores de la fila resultante
-    columnas = fila_resultante.columns
-    valores = fila_resultante.values.flatten()
-
-    # Crear un gráfico de barras
-    ax.bar(columnas, valores)
-
-    # Configurar etiquetas y título
-    plt.xlabel('Columna')
-    plt.ylabel('Valor en la Fila Resultante')
-    plt.title(f'Gráfico de Barras para la Fila {indice_deseado}')
-
-    # Mostrar el gráfico
-    plt.show()
-    
-def grafica_barras_data_sumada():
-    # Crear una figura y ejes
-    fig, ax = plt.subplots()
-
-    # Obtener nombres de columnas y valores de data_sumada
-    columnas = data_sumada.columns
-    valores = data_sumada.loc[[indice_deseado]].values  # Utilizar el índice deseado
-
-    # Obtener el número de barras
-    num_barras = len(columnas)
-
-    # Crear un rango para la posición de las barras
-    posicion_barras = np.arange(num_barras)
-
-    # Crear un gráfico de barras verticales intercambiando x e y
-    ax.bar(posicion_barras, valores.flatten(), align='center', label=indice_deseado)  # Utilizar flatten para convertir a una dimensión
-
-    # Configurar etiquetas y título
-    plt.ylabel('Valor en Data Sumada')
-    plt.xlabel('Columna')
-    plt.title(f'Gráfico de Barras para Data Sumada - Índice: {indice_deseado}')
-
-    # Mostrar las etiquetas en el eje x
-    ax.set_xticks(posicion_barras)
-    ax.set_xticklabels(columnas)
-
-    # Mostrar la leyenda
-    ax.legend()
-
-    # Mostrar el gráfico
-    plt.show()
-
 def eliminar_caracter_columnas(dataframe, indice_a_eliminar):
     # Iterar sobre todas las columnas del DataFrame
     for columna in dataframe.columns:
@@ -225,13 +150,6 @@ def sumar_columnas_repetidas(dataframe):
     dataframe_sumado = dataframe.groupby(dataframe.columns, axis=1).sum()
 
     return dataframe_sumado
-
-def obtener_numero_ingresado():
-    global indice_a_eliminar, data_marginizada, data_sumada  # Necesario para modificar las variables globales
-    indice_a_eliminar = int(numero_ingresado.get())
-    data_marginizada = eliminar_caracter_columnas(df5, indice_a_eliminar)
-    data_sumada = sumar_columnas_repetidas(data_marginizada)
-    print("la data sumada es ", data_sumada)  # Agrega esta línea para verificar si data_sumada se actualiza correctamente
 
 def eliminar_posicion_digito_fila(dataframe, posicion_a_eliminar):
   # Crear una copia del DataFrame original
@@ -266,115 +184,6 @@ def sumar_filas_similares(dataframe):
 generar_combinaciones_binarias(len(canales))
 cargar_combinaciones_canales()
 
-#obtendremos coincidencias
-
-for i in range(len(combinaciones_posibles)):
-  #obtenemos los índices siguientes a las coincidencias
-  indices= obtener_indices(i)
-  for k in canales:
-      datos_tabla=[]
-      coincidencias=0
-      total=0
-      for l in indices:
-        if l+1 != len(canales[0]):
-          if k[l + 1] == 1 :
-              coincidencias=coincidencias+1
-              total=total+1
-          else:
-              total=total+1
-      if(total!=0):
-        datos_tabla.append(coincidencias/total)
-
-      data2.extend(datos_tabla)
-
-data2 = [data2[i:i+ len(canales)] for i in range(0, len(data2), len(canales))]
-
-# Crear nombres para las columnas y filas
-column_names = ['canal{}'.format(i + 1) for i in range(len(canales))]
-index_names = combinaciones_posibles
-
-# Convertir el array de NumPy en un DataFrame de Pandas con nombres
-df = pd.DataFrame(data2, columns=column_names, index=index_names)
-
-# Mostrar el DataFrame resultante
-print(df)
-    
-#-ejercicio2-------------------------------
-
-#solución punto 2
-
-data3=[]
-
-for i in range(len(combinaciones_posibles)):
-  #obtenemos los índices siguientes a las coincidencias
-  indices= obtener_indices(i)
-  for k in range(len(combinaciones_posibles)):
-      datos_tabla2=[]
-      coincidencias=0
-      total=0
-      for l in indices:
-        if l+1 != len(combinaciones_canales):
-          if combinaciones_canales[l + 1] == combinaciones_posibles[k] :
-              coincidencias=coincidencias+1
-              total=total+1
-          else:
-              total=total+1
-      if(total!=0):
-        datos_tabla2.append(coincidencias/total)
-
-      data3.extend(datos_tabla2)
-
-data3 = [data3[i:i+ len(combinaciones_posibles)] for i in range(0, len(data3), len(combinaciones_posibles))]
-
-# Crear nombres para las columnas y filas
-column_names = combinaciones_posibles
-index_names = combinaciones_posibles
-
-# Convertir el array de NumPy en un DataFrame de Pandas con nombres
-df2 = pd.DataFrame(data3, columns=column_names, index=index_names)
-
-# Mostrar el DataFrame resultante
-print(df2)
-
-#ejercicio 3 -------------------------------------------------------------------------------------
-
-data4=[]
-
-for i in range(len(combinaciones_posibles)):
-  #obtenemos los índices siguientes a las coincidencias
-  indices= obtener_indices(i)
-  for k in canales:
-      datos_tabla=[]
-      coincidencias=0
-      total=0
-      for l in indices:
-        if l != 0:
-          if k[l - 1] == 1 :
-              coincidencias=coincidencias+1
-              total=total+1
-          else:
-              total=total+1
-      if(total!=0):
-        datos_tabla.append(coincidencias/total)
-
-      data4.extend(datos_tabla)
-
-data4 = [data4[i:i+ len(canales)] for i in range(0, len(data4), len(canales))]
-
-# Crear nombres para las columnas y filas
-column_names = ['canal{}'.format(i + 1) for i in range(len(canales))]
-index_names = combinaciones_posibles
-
-# Convertir el array de NumPy en un DataFrame de Pandas con nombres
-""" df4 = pd.DataFrame(data4, columns=column_names, index=index_names)
-
-# Mostrar el DataFrame resultante
-print(df4) """
-
-#ejercicio4------------------------------------------------
-
-#solución punto 4
-
 data5=[]
 
 for i in range(len(combinaciones_posibles)):
@@ -407,25 +216,27 @@ df5 = pd.DataFrame(data5, columns=column_names, index=index_names)
 
 # Mostrar el DataFrame resultante
 print(df5)
+
+
+
+
     
 #Marginalizar--------------------------------------------------------------- 
 
-def mostrar_ventana_punto3():
-    ventana_punto3 = tk.Toplevel(ventana)
-    ventana_punto3.title("Punto 3")
+def mostrar_ventana_final():
+    ventana_final = tk.Toplevel(ventana)
+    ventana_final.title("Punto 3")
 
     # Variables para almacenar la información
-    vfuturo = []
-    vpresente = [None, None, None]
+    vfuturo2 = []
+    vpresente2 = [None, None, None]
 
     # Función para guardar la información
-    def guardar_informacion():
+    def marginizardata(vfuturo, vpresente):
 
-        nonlocal vfuturo
-        vfuturo = [check_a.get(), check_b.get(), check_c.get()]
+        """ vfuturo = [check_a.get(), check_b.get(), check_c.get()]
 
-        nonlocal vpresente
-        vpresente = [entrada_a.get(), entrada_b.get(), entrada_c.get()]
+        vpresente = [entrada_a.get(), entrada_b.get(), entrada_c.get()] """
         global resultado
         resultado= pd.DataFrame()
         
@@ -469,100 +280,138 @@ def mostrar_ventana_punto3():
                   copia=sumar_filas_similares(copia) 
             print("jee")
             print(resultado)
-            if resultado.size != 0:
-                resultado = pd.DataFrame(np.kron(resultado, copia))
+            if(resultado.empty):
+              resultado=copia
             else:
-                resultado = pd.DataFrame(copia)
+              resultado= ptensorial(resultado,copia)
                              
-        # Dentro de la función guardar_informacion después de calcular resultado
-        if not resultado.empty:
-          # Mostrar la ventana de resultados
-          mostrar_ventana_resultados()
-          barras_resultado()
-
-        ventana_punto3.destroy()
+            return resultado
         
+
+    #función proyecto final programación dinámica
+        
+    def bottonup():
+      tabla=[]
+      vfuturoejemplo=[True,True,True]
+      vpresenteejemplo=[1, '',0]
+      asociacion = {0: 'A', 1: 'B', 2: 'C'}
+      optimo= 0
+      cadenaoptima= ""
+      dataoptima= None
+
+      for k in range(len(vfuturoejemplo)):
+         for j in range(len(vpresenteejemplo)):
+          if(vfuturoejemplo[k] == True):
+              #nuevos array donde todos cambian menos en la posición k
+              nuevo_array = [False if i == k else True for i in range(len(vfuturoejemplo))] 
+              nuevo_array_2 = [val if i == j else ' ' for i, val in enumerate(vpresenteejemplo)]
+              letrafuturo1 = asociacion[k]
+              letraactual1 = asociacion[j]
+              cadena_parcial = f"{letrafuturo1}/{letraactual1}"
+
+              # Buscar si cadena_parcial está en alguna clave del array tabla
+              valor_asociado = None
+              for diccionario in tabla:
+                  if cadena_parcial in diccionario:
+                      valor_asociado = diccionario[cadena_parcial]
+                      break
+              
+              # Si cadena_parcial no se encontró, calcular x con marginizardata
+              if valor_asociado is None:
+                  x = marginizardata(nuevo_array, nuevo_array_2)
+                  tabla.append({cadena_parcial: x})
+              else:
+                  x = valor_asociado
+              
+              array_inverso = [True if i == k else False for i in range(len(vfuturoejemplo))] 
+              array_inverso2= [' ' if i == j or val == ' ' else val for i, val in enumerate(vpresenteejemplo)]
+
+              # Obtener letras asociadas a las posiciones que cumplen las condiciones
+              letra2_futuro = ''.join([asociacion[i] for i in range(len(array_inverso)) if array_inverso[i]])
+              letra2_presente = ''.join([asociacion[i] for i in range(len(array_inverso2)) if array_inverso2[i] != ' '])
+              cadena_parcial2= f"{letra2_futuro}/{letra2_presente}"
+
+              # Buscar si cadena_parcial está en alguna clave del array tabla
+              valor_asociado2 = None
+              for diccionario in tabla:
+                  if cadena_parcial2 in diccionario:
+                      valor_asociado2 = diccionario[cadena_parcial2]
+                      break
+              
+              # Si cadena_parcial no se encontró, calcular x con marginizardata
+              if valor_asociado2 is None:
+                  x2 = marginizardata(array_inverso, array_inverso2)
+                  tabla.append({cadena_parcial2: x2})
+              else:
+                  x2 = valor_asociado2
+              
+              x2= x2.transpose()
+              df_x = pd.DataFrame(x)
+              df_x2 = pd.DataFrame(x2)
+              df_resultado= tensor_product(df_x,df_x2)
+              
+              cadena_resultado = f"{letrafuturo1}/{letraactual1} * {letra2_futuro}/{letra2_presente}"
+              tabla.append({cadena_resultado: df_resultado})
+              original = marginizardata(vfuturoejemplo,vpresenteejemplo)
+              df_original = pd.DataFrame(original)
+              emd_result = calculate_emd_marginal(df_resultado, df_original)
+              if(emd_result > optimo):
+                 optimo= emd_result
+                 cadenaoptima= cadena_resultado
+                 dataoptima= df_resultado
+
+          return optimo, cadenaoptima, dataoptima
+
+
     # Checkbox para el punto 3
     check_a = tk.BooleanVar()
     check_b = tk.BooleanVar()
     check_c = tk.BooleanVar()
 
 
-    tk.Checkbutton(ventana_punto3, text="A", variable=check_a).grid(row=0, column=0)
-    tk.Checkbutton(ventana_punto3, text="B", variable=check_b).grid(row=1, column=0)
-    tk.Checkbutton(ventana_punto3, text="C", variable=check_c).grid(row=2, column=0)
+    tk.Checkbutton(ventana_final, text="A", variable=check_a).grid(row=0, column=0)
+    tk.Checkbutton(ventana_final, text="B", variable=check_b).grid(row=1, column=0)
+    tk.Checkbutton(ventana_final, text="C", variable=check_c).grid(row=2, column=0)
 
     # Labels e inputs para el presente
-    tk.Label(ventana_punto3, text="A").grid(row=0, column=1)
-    tk.Label(ventana_punto3, text="B").grid(row=1, column=1)
-    tk.Label(ventana_punto3, text="C").grid(row=2, column=1)
+    tk.Label(ventana_final, text="A").grid(row=0, column=1)
+    tk.Label(ventana_final, text="B").grid(row=1, column=1)
+    tk.Label(ventana_final, text="C").grid(row=2, column=1)
 
-    entrada_a = tk.Entry(ventana_punto3)
-    entrada_b = tk.Entry(ventana_punto3)
-    entrada_c = tk.Entry(ventana_punto3)
+    entrada_a = tk.Entry(ventana_final)
+    entrada_b = tk.Entry(ventana_final)
+    entrada_c = tk.Entry(ventana_final)
 
     entrada_a.grid(row=0, column=2)
     entrada_b.grid(row=1, column=2)
     entrada_c.grid(row=2, column=2)
 
     # Botón para guardar la información
-    boton_guardar = tk.Button(ventana_punto3, text="Guardar", command=guardar_informacion)
+    boton_guardar = tk.Button(ventana_final, text="Guardar", command=bottonup)
     boton_guardar.grid(row=3, column=0, columnspan=3, pady=10)
 
     # Centrar la ventana en la pantalla principal
-    ventana_punto3.geometry("+{}+{}".format(
-        int((ventana.winfo_screenwidth() - ventana_punto3.winfo_reqwidth()) / 2),
-        int((ventana.winfo_screenheight() - ventana_punto3.winfo_reqheight()) / 2)
+    ventana_final.geometry("+{}+{}".format(
+        int((ventana.winfo_screenwidth() - ventana_final.winfo_reqwidth()) / 2),
+        int((ventana.winfo_screenheight() - ventana_final.winfo_reqheight()) / 2)
     ))
     
 #ventana-----------------------------------------------------------------------------
 ventana = tk.Tk()
 ventana.title("Proyecto Analisis")
 
-dato_ingresado = tk.StringVar()
-numero_ingresado = tk.DoubleVar()
-
-# Crear el campo de entrada
-campo_entrada = tk.Entry(ventana, textvariable=dato_ingresado)
-campo_entrada.pack()
-
-campo_numero = tk.Entry(ventana, textvariable=numero_ingresado)
-campo_numero.pack()
-
-# Botón para obtener el dato ingresado
-boton_obtener_dato = tk.Button(ventana, text="Obtener Dato", command=obtener_dato_ingresado)
-boton_obtener_dato.pack()
-
-# Botón para obtener el número ingresado
-boton_obtener_numero = tk.Button(ventana, text="Obtener numero", command=obtener_numero_ingresado)
-boton_obtener_numero.pack()
-
 
 # Botón para mostrar la tabla
-boton_mostrar_tabla = tk.Button(ventana, text="Mostrar Tabla", command=lambda:mostrar_tabla(df5))
+boton_mostrar_tabla = tk.Button(ventana, text="Mostrar Tabla Original", command=lambda:mostrar_tabla(df5))
 boton_mostrar_tabla.pack()
 
 
-# Botón para mostrar la tabla marginizada
-boton_mostrar_tabla_marginizada = tk.Button(ventana, text="Mostrar Tabla marginizada", command=lambda:mostrar_tabla_marginizada(data_sumada))
-boton_mostrar_tabla_marginizada.pack()
-
-# Botón para mostrar la gráfica de barras de data_sumada
-boton_grafica_barras_data_sumada = tk.Button(ventana, text="Gráfico de Barras para Data Sumada", command=grafica_barras_data_sumada)
-boton_grafica_barras_data_sumada.pack()
-
-""" boton_archivo = tk.Button(ventana, text="Cargar Archivo", command=hacer_clic)
-boton_archivo.pack() """
-
-# Botón para mostrar el gráfico de barras para la fila resultante
-boton_grafica_barras_fila_resultante = tk.Button(ventana, text="Gráfico de Barras para la Fila ", command=lambda: grafica_barras_fila_resultante(fila_resultante))
-boton_grafica_barras_fila_resultante.pack()
-
 # Botón para mostrar la ventana del punto 3
-boton_punto3 = tk.Button(ventana, text="Punto 3", command=mostrar_ventana_punto3)
+boton_punto3 = tk.Button(ventana, text="Punto 3", command=mostrar_ventana_final)
 boton_punto3.pack()
 
 etiqueta = tk.Label(ventana, text="")
 etiqueta.pack()
+
 
 ventana.mainloop()
