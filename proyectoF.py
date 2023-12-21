@@ -19,16 +19,6 @@ canales=[ [0,1,1,0,1,1,0,0,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,0,0,0,1],
 combinaciones_posibles=[]
 combinaciones_canales=[]
 data2=[]
-
-datasustentacion=np.array([[1, 0, 0, 0, 0, 0, 0, 0],
-                            [0, 1, 0, 0, 0, 0, 0, 0],
-                            [0, 0, 1, 0, 0, 0, 0, 0],
-                            [0, 0, 0, 1, 0, 0, 0, 0],
-                            [0, 0, 0, 0, 1, 0, 0, 0],
-                            [0, 0, 0, 0, 0, 1, 0, 0],
-                            [0, 0, 0, 0, 0, 0, 1, 0],
-                            [0, 0, 0, 0, 0, 0, 0, 1]])
-
 #funciones---------------------------------------------------------------------
 
 def calculate_emd_marginal(df1, df2):
@@ -92,9 +82,13 @@ def tensor_product(df1, df2):
     for index in df1.index:
         for c1 in df1.columns:
             for c2 in df2.columns:
-                tensor_df.loc[index, f'{c1}_{c2}'] = df1.loc[index, c1] * df2.loc[index, c2]
+                tensor_df.at[index, f'{c1}_{c2}'] = df1.at[index, c1] * df2.at[index, c2]
+    
+    # Renombrar las columnas para que coincidan con los nombres de las filas
+    tensor_df.columns = tensor_df.index
     
     return tensor_df
+
 
 def obtener_indices(x):
   indices=[]
@@ -220,9 +214,8 @@ index_names = combinaciones_posibles
 # Convertir el array de NumPy en un DataFrame de Pandas con nombres
 df5 = pd.DataFrame(data5, columns=column_names, index=index_names)
 
-dataframesustentacion=pd.DataFrame(datasustentacion, columns=column_names, index=index_names)
-
-
+# Mostrar el DataFrame resultante
+print(df5)
 
 
 
@@ -250,7 +243,7 @@ def mostrar_ventana_final():
         for l in range(len(vfuturo)):
           if vfuturo[l] == True:
             for v in range(len(vfuturo)):
-              copia=dataframesustentacion
+              copia=df5
               if vfuturo[v] == True:
                 if(v == 0):
                   copia=eliminar_caracter_columnas(copia, 1)
@@ -285,6 +278,8 @@ def mostrar_ventana_final():
                   copia=sumar_filas_similares(copia)
                   copia=eliminar_posicion_digito_fila(copia, 1)
                   copia=sumar_filas_similares(copia) 
+            print("jee")
+            print(resultado)
             if(resultado.empty):
               resultado=copia
             else:
@@ -297,10 +292,10 @@ def mostrar_ventana_final():
         
     def bottonup():
       tabla=[]
-      vfuturoejemplo=[False,True,True]
-      vpresenteejemplo=[1, 0 ,'']
+      vfuturoejemplo=[True,True,True]
+      vpresenteejemplo=[1, '',0]
       asociacion = {0: 'A', 1: 'B', 2: 'C'}
-      optimo= 123132132
+      optimo= 0
       cadenaoptima= ""
       dataoptima= None
 
@@ -360,18 +355,14 @@ def mostrar_ventana_final():
               original = marginizardata(vfuturoejemplo,vpresenteejemplo)
               df_original = pd.DataFrame(original)
               emd_result = calculate_emd_marginal(df_resultado, df_original)
-              if(emd_result <= optimo):
+              if(emd_result > optimo):
                  optimo= emd_result
                  cadenaoptima= cadena_resultado
                  dataoptima= df_resultado
-              print("emd")
-              print(emd_result)
-              print("expresión")
-              print(cadena_resultado)
 
           return optimo, cadenaoptima, dataoptima
 
-    bottonup()
+
     # Checkbox para el punto 3
     check_a = tk.BooleanVar()
     check_b = tk.BooleanVar()
